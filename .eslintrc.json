@@ -1,0 +1,44 @@
+{
+    "env": {
+        "browser": true,
+        "es2021": true,
+        "node": true
+    },
+    "extends": [
+        "eslint:recommended",
+   "prettier"
+    ],
+    "parserOptions": {
+        "ecmaVersion": "latest",
+        "sourceType": "module"
+    },
+    "rules": {
+        "rules": {
+            // Possible Errors
+         "no-console": "warn",
+"no-debugger": "warn",
+
+// Best Practices
+"eqeqeq": "warn",
+"no-var": "warn",
+"prefer-const": "warn",
+
+// Stylistic
+"semi": ["warn", "always"],
+"quotes": ["warn", "double"],
+"indent": ["warn", 2],
+
+// Relaxed Rules
+"no-unused-vars": "warn",
+"no-undef": "warn",
+"no-empty": "warn",
+"no-trailing-spaces": "warn",
+
+// Disabled Rules for more relaxed development
+"no-shadow": "off",
+"camelcase": "off",
+"no-plusplus": "off",
+"no-underscore-dangle": "off"
+          }
+    }
+}
