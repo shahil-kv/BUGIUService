@@ -1116,7 +1116,6 @@ paths:
                     type: string
                     example: |-
                       Error: Email is already verified!
-                          at file:///usr/src/freeapi/src/controllers/apps/auth/user.controllers.js:240:11
                           at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
                   statusCode:
                     type: number
@@ -1132,7 +1131,6 @@ paths:
                     message: Email is already verified!
                     stack: |-
                       Error: Email is already verified!
-                          at file:///usr/src/freeapi/src/controllers/apps/auth/user.controllers.js:240:11
                           at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
                     statusCode: 409
                     success: false

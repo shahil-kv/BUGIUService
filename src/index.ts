@@ -20,12 +20,10 @@ const startServer = () => {
   });
 };
 
-// connectDB()
-//     .then(() => {
-//         startServer();
-//     })
-//     .catch((err: Error) => {
-//         logger.error("Mongo db connect error: ", err);
-//     });
-
-startServer();
+connectDB()
+  .then(() => {
+    startServer();
+  })
+  .catch((err: Error) => {
+    logger.error('Mongo db connect error: ', err);
+  });
