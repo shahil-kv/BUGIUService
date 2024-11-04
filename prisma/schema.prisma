@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,22 +7,574 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                Int      @id @default(autoincrement())
-  fullName          String   @db.VarChar(100)
-  dob               DateTime @db.DateTime
-  addressLine1      String   @db.VarChar(300)
-  addressLine2      String?  @db.VarChar(300) // Optional fields are nullable
-  pinCode           Int?     @db.Int
-  district          String?  @db.VarChar(100)
-  state             String?  @db.VarChar(100)
-  country           String   @db.VarChar(100)
-  email             String   @unique @db.VarChar(100)
-  isdCode           String   @db.VarChar(10)
-  mobileNumber      Int      @db.Int
-  loginId           String   @db.VarChar(50)
-  encryptedPassword String   @db.VarChar(100)
-  createdBy         String?  @db.VarChar(100)
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+model AppUser {
+  userId       Int       @id(map: "PK__AppUser__CB9A1CFF24FED6FD") @default(autoincrement())
+  role         String    @db.VarChar(100)
+  fullName     String    @db.VarChar(100)
+  dob          DateTime  @db.Date
+  addressLine1 String    @db.VarChar(300)
+  addressLine2 String?   @db.VarChar(300)
+  pinCode      Int?
+  district     String?   @db.VarChar(100)
+  state        String?   @db.VarChar(100)
+  country      String    @db.VarChar(100)
+  emailId      String    @db.VarChar(100)
+  isdCode      String    @db.VarChar(10)
+  mobileNumber BigInt
+  loginId      String    @db.VarChar(50)
+  password     String    @db.VarChar(100)
+  createdBy    String?   @db.VarChar(100)
+  createdOn    DateTime?
+  updatedBy    String?   @db.VarChar(100)
+  updatedOn    DateTime?
+
+  @@unique([role, emailId], map: "unique_role_emailid")
+  @@unique([role, loginId], map: "unique_role_loginid")
+  @@unique([role, mobileNumber], map: "unique_role_mobilenumber")
+}
+
+model Assignment {
+  assignmentId         Int                    @id(map: "PK__Assignme__52C21820CAEB26B5") @default(autoincrement())
+  subjectId            Int
+  seqNo                Int
+  question             String                 @db.NVarChar(4000)
+  facultyId            Int?
+  maxMark              Decimal                @db.Decimal(10, 2)
+  passMark             Decimal                @db.Decimal(10, 2)
+  dueDate              DateTime               @db.Date
+  createdBy            String?                @db.VarChar(100)
+  createdOn            DateTime?
+  updatedBy            String?                @db.VarChar(100)
+  updatedOn            DateTime?
+  BatchSub             BatchSub               @relation(fields: [subjectId], references: [subjectId], onUpdate: NoAction, map: "fk_b_ass_sub")
+  AssignmentSubmission AssignmentSubmission[]
+}
+
+model AssignmentSubmission {
+  id           Int        @id(map: "PK__Assignme__3213E83F4B539A60") @default(autoincrement())
+  assignmentId Int
+  enrolmentId  Int
+  file1Link    String?    @db.VarChar(500)
+  file2Link    String?    @db.VarChar(500)
+  file3Link    String?    @db.VarChar(500)
+  assessedBy   String?    @db.VarChar(100)
+  mark         Decimal?   @db.Decimal(10, 2)
+  createdBy    String?    @db.VarChar(100)
+  createdOn    DateTime?
+  updatedBy    String?    @db.VarChar(100)
+  updatedOn    DateTime?
+  Enrolment    Enrolment  @relation(fields: [enrolmentId], references: [enrolmentId], onUpdate: NoAction, map: "fk_ass_enr_subm")
+  Assignment   Assignment @relation(fields: [assignmentId], references: [assignmentId], onUpdate: NoAction, map: "fk_ass_subm")
+}
+
+model Batch {
+  batchId             Int         @id(map: "PK__Batch__78CCD773414D31E8") @default(autoincrement())
+  courseCode          String      @db.VarChar(10)
+  courseName          String      @db.VarChar(50)
+  batchName           String      @db.VarChar(100)
+  type                String      @db.VarChar(50)
+  duration            Int
+  enrolmentFee        Int
+  feeDueNoDays        Int
+  freezeNoDays        Int
+  maxMark             Decimal     @db.Decimal(10, 2)
+  passMark            Decimal     @db.Decimal(10, 2)
+  enrolmentStartDate  DateTime    @db.Date
+  enrolmentFreezeDate DateTime    @db.Date
+  classStartDate      DateTime?   @db.Date
+  status              String      @db.VarChar(20)
+  createdBy           String?     @db.VarChar(100)
+  createdOn           DateTime?
+  updatedBy           String?     @db.VarChar(100)
+  updatedOn           DateTime?
+  BatchSem            BatchSem[]
+  Enrolment           Enrolment[]
+}
+
+model BatchExam {
+  examId           Int                @id(map: "PK__BatchExa__A56D125FA100352A") @default(autoincrement())
+  subjectId        Int
+  type             String             @db.VarChar(10)
+  startDate        DateTime           @db.Date
+  endDate          DateTime           @db.Date
+  maxMark          Decimal            @db.Decimal(10, 2)
+  passMark         Decimal            @db.Decimal(10, 2)
+  createdBy        String?            @db.VarChar(100)
+  createdOn        DateTime?
+  updatedBy        String?            @db.VarChar(100)
+  updatedOn        DateTime?
+  BatchSub         BatchSub           @relation(fields: [subjectId], references: [subjectId], onUpdate: NoAction, map: "fk_b_exam_sub")
+  BatchExamQ       BatchExamQ[]
+  ExamAttempt      ExamAttempt[]
+  ExamReAttemptReq ExamReAttemptReq[]
+}
+
+model BatchExamQ {
+  questionId         Int                  @id(map: "PK__BatchExa__6238D4B23700FCA8") @default(autoincrement())
+  examId             Int
+  question           String               @db.NVarChar(4000)
+  option1            String               @db.NVarChar(4000)
+  option2            String               @db.NVarChar(4000)
+  option3            String               @db.NVarChar(4000)
+  option4            String               @db.NVarChar(4000)
+  rightAnswer        String               @db.VarChar(1)
+  maxMark            Decimal              @db.Decimal(10, 2)
+  passMark           Decimal              @db.Decimal(10, 2)
+  duration           Int
+  createdBy          String?              @db.VarChar(100)
+  createdOn          DateTime?
+  updatedBy          String?              @db.VarChar(100)
+  updatedOn          DateTime?
+  BatchExam          BatchExam            @relation(fields: [examId], references: [examId], onUpdate: NoAction, map: "fk_b_examq_sub")
+  ExamAttemptDetails ExamAttemptDetails[]
+}
+
+model BatchFaculty {
+  id        Int       @id(map: "PK__BatchFac__3213E83FFD80C662") @default(autoincrement())
+  subjectId Int
+  facultyId Int?
+  createdBy String?   @db.VarChar(100)
+  createdOn DateTime?
+  updatedBy String?   @db.VarChar(100)
+  updatedOn DateTime?
+  BatchSub  BatchSub  @relation(fields: [subjectId], references: [subjectId], onUpdate: NoAction, map: "fk_b_fac_sub")
+}
+
+model BatchModule {
+  moduleId          Int                 @id(map: "PK__BatchMod__8EEC8E17F9ED9FEE") @default(autoincrement())
+  subjectId         Int
+  seqNumber         Int
+  video1link        String              @db.VarChar(500)
+  video2link        String?             @db.VarChar(500)
+  video3link        String?             @db.VarChar(500)
+  maxMark           Decimal             @db.Decimal(10, 2)
+  passMark          Decimal             @db.Decimal(10, 2)
+  startDate         DateTime            @db.Date
+  freezeDate        DateTime            @db.Date
+  learningPoint     Int?
+  learningHour      Decimal?            @db.Decimal(10, 2)
+  createdBy         String?             @db.VarChar(100)
+  createdOn         DateTime?
+  updatedBy         String?             @db.VarChar(100)
+  updatedOn         DateTime?
+  BatchSub          BatchSub            @relation(fields: [subjectId], references: [subjectId], onUpdate: NoAction, map: "fk_b_module_sub")
+  BatchModuleQ      BatchModuleQ[]
+  ModuleExamAttempt ModuleExamAttempt[]
+}
+
+model BatchModuleQ {
+  questionId  Int         @id(map: "PK__BatchMod__6238D4B260142753") @default(autoincrement())
+  moduleId    Int
+  question    String      @db.NVarChar(4000)
+  option1     String      @db.NVarChar(4000)
+  option2     String      @db.NVarChar(4000)
+  option3     String      @db.NVarChar(4000)
+  option4     String      @db.NVarChar(4000)
+  rightAnswer String      @db.VarChar(1)
+  maxMark     Decimal     @db.Decimal(10, 2)
+  passMark    Decimal     @db.Decimal(10, 2)
+  duration    Int
+  createdBy   String?     @db.VarChar(100)
+  createdOn   DateTime?
+  updatedBy   String?     @db.VarChar(100)
+  updatedOn   DateTime?
+  BatchModule BatchModule @relation(fields: [moduleId], references: [moduleId], onUpdate: NoAction, map: "fk_b_q_mod")
+}
+
+model BatchSem {
+  semId            Int                @id(map: "PK__BatchSem__DF1884128DF121EA") @default(autoincrement())
+  batchId          Int
+  seqNumber        Int
+  duration         Int
+  fee              Int
+  startDate        DateTime           @db.Date
+  feeDueDate       DateTime           @db.Date
+  freezeDate       DateTime           @db.Date
+  maxMark          Decimal            @db.Decimal(10, 2)
+  passMark         Decimal            @db.Decimal(10, 2)
+  status           String             @db.VarChar(20)
+  createdBy        String?            @db.VarChar(100)
+  createdOn        DateTime?
+  updatedBy        String?            @db.VarChar(100)
+  updatedOn        DateTime?
+  Batch            Batch              @relation(fields: [batchId], references: [batchId], onUpdate: NoAction, map: "fk_Semester_batch")
+  BatchSub         BatchSub[]
+  EnrolmentSummary EnrolmentSummary[]
+  FeeDueAndPayment FeeDueAndPayment[]
+  Score            Score[]
+
+  @@unique([batchId, seqNumber], map: "unique_batch_sem")
+}
+
+model BatchSub {
+  subjectId     Int             @id(map: "PK__BatchSub__ACF9A760B6C42598") @default(autoincrement())
+  semId         Int
+  name          String          @db.VarChar(50)
+  code          String          @db.VarChar(10)
+  maxMark       Decimal         @db.Decimal(10, 2)
+  passMark      Decimal         @db.Decimal(10, 2)
+  createdBy     String?         @db.VarChar(100)
+  createdOn     DateTime?
+  updatedBy     String?         @db.VarChar(100)
+  updatedOn     DateTime?
+  Assignment    Assignment[]
+  BatchExam     BatchExam[]
+  BatchFaculty  BatchFaculty[]
+  BatchModule   BatchModule[]
+  BatchSem      BatchSem        @relation(fields: [semId], references: [semId], onUpdate: NoAction, map: "fk_b_sub_sem")
+  BatchTextBook BatchTextBook[]
+  IntSession    IntSession[]
+}
+
+model BatchTextBook {
+  id        Int       @id(map: "PK__BatchTex__3213E83F50229432") @default(autoincrement())
+  subjectId Int
+  name      String    @db.NVarChar(500)
+  link      String    @db.VarChar(500)
+  docType   String    @db.VarChar(10)
+  createdBy String?   @db.VarChar(100)
+  createdOn DateTime?
+  updatedBy String?   @db.VarChar(100)
+  updatedOn DateTime?
+  BatchSub  BatchSub  @relation(fields: [subjectId], references: [subjectId], onUpdate: NoAction, map: "fk_b_book_sub")
+}
+
+model Course {
+  courseId     Int        @id(map: "PK__Course__2AA84FD15D4D7B23") @default(autoincrement())
+  courseCode   String     @unique(map: "UQ__Course__537513F1279E70FC") @db.VarChar(10)
+  name         String     @db.VarChar(50)
+  type         String     @db.VarChar(50)
+  duration     Int
+  enrolmentFee Int
+  feeDueNoDays Int
+  freezeNoDays Int
+  maxMark      Decimal    @db.Decimal(10, 2)
+  passMark     Decimal    @db.Decimal(10, 2)
+  createdBy    String?    @db.VarChar(100)
+  createdOn    DateTime?
+  updatedBy    String?    @db.VarChar(100)
+  updatedOn    DateTime?
+  Semester     Semester[]
+}
+
+model Enrolment {
+  enrolmentId          Int                    @id(map: "PK__Enrolmen__34687B0BF14252C0") @default(autoincrement())
+  batchId              Int
+  studentId            Int
+  status               String                 @db.VarChar(10)
+  createdBy            String?                @db.VarChar(100)
+  createdOn            DateTime?
+  updatedBy            String?                @db.VarChar(100)
+  updatedOn            DateTime?
+  AssignmentSubmission AssignmentSubmission[]
+  Batch                Batch                  @relation(fields: [batchId], references: [batchId], onUpdate: NoAction, map: "fk_enr_bat")
+  Student              Student                @relation(fields: [studentId], references: [studentId], onUpdate: NoAction, map: "fk_enr_stu")
+  EnrolmentSummary     EnrolmentSummary[]
+  ExamAttempt          ExamAttempt[]
+  ExamReAttemptReq     ExamReAttemptReq[]
+  FeeDueAndPayment     FeeDueAndPayment[]
+  ModuleExamAttempt    ModuleExamAttempt[]
+  Score                Score[]
+}
+
+model EnrolmentSummary {
+  summaryId     Int       @id(map: "PK__Enrolmen__23616568B726376B") @default(autoincrement())
+  semId         Int
+  enrolmentId   Int
+  status        String?   @db.VarChar(10)
+  mark          Decimal?  @db.Decimal(10, 2)
+  maxMark       Decimal?  @db.Decimal(10, 2)
+  passMark      Decimal?  @db.Decimal(10, 2)
+  dueFeeAmount  Int?
+  paidAmout     Int?
+  isPassed      Boolean?
+  Remarks       String?   @db.VarChar(100)
+  learningPoint Int?
+  learningHour  Decimal?  @db.Decimal(10, 2)
+  createdBy     String?   @db.VarChar(100)
+  createdOn     DateTime?
+  updatedBy     String?   @db.VarChar(100)
+  updatedOn     DateTime?
+  Enrolment     Enrolment @relation(fields: [enrolmentId], references: [enrolmentId], onUpdate: NoAction, map: "fk_summ_enr")
+  BatchSem      BatchSem  @relation(fields: [semId], references: [semId], onUpdate: NoAction, map: "fk_summ_sem")
+}
+
+model ExamAttempt {
+  attemptId          Int                  @id(map: "PK__ExamAtte__930480062542554B") @default(autoincrement())
+  examId             Int
+  enrolmentId        Int
+  startTime          DateTime?
+  endTime            DateTime?
+  maxMark            Decimal?             @db.Decimal(10, 2)
+  passMark           Decimal?             @db.Decimal(10, 2)
+  isPassed           Boolean?
+  mark               Decimal?             @db.Decimal(10, 2)
+  createdBy          String?              @db.VarChar(100)
+  createdOn          DateTime?
+  updatedBy          String?              @db.VarChar(100)
+  updatedOn          DateTime?
+  Enrolment          Enrolment            @relation(fields: [enrolmentId], references: [enrolmentId], onUpdate: NoAction, map: "fk_att_enr")
+  BatchExam          BatchExam            @relation(fields: [examId], references: [examId], onUpdate: NoAction, map: "fk_att_exam")
+  ExamAttemptDetails ExamAttemptDetails[]
+}
+
+model ExamAttemptDetails {
+  id          Int         @id(map: "PK__ExamAtte__3213E83F559A323A") @default(autoincrement())
+  attemptId   Int
+  questionId  Int
+  givenAnswer String?     @db.VarChar(1)
+  createdBy   String?     @db.VarChar(100)
+  createdOn   DateTime?
+  updatedBy   String?     @db.VarChar(100)
+  updatedOn   DateTime?
+  ExamAttempt ExamAttempt @relation(fields: [attemptId], references: [attemptId], onUpdate: NoAction, map: "fk_att")
+  BatchExamQ  BatchExamQ  @relation(fields: [questionId], references: [questionId], onUpdate: NoAction, map: "fk_att_q")
+}
+
+model ExamReAttemptReq {
+  reattemptReqId     Int       @id(map: "PK__ExamReAt__17C30CF04F73B958") @default(autoincrement())
+  examId             Int
+  enrolmentId        Int
+  attemptSeqNo       Int?
+  status             String?   @db.VarChar(10)
+  reattemptWindStart DateTime? @db.Date
+  reattemptWindEnd   DateTime? @db.Date
+  createdBy          String?   @db.VarChar(100)
+  createdOn          DateTime?
+  updatedBy          String?   @db.VarChar(100)
+  updatedOn          DateTime?
+  Enrolment          Enrolment @relation(fields: [enrolmentId], references: [enrolmentId], onUpdate: NoAction, map: "fk_reatt_enr")
+  BatchExam          BatchExam @relation(fields: [examId], references: [examId], onUpdate: NoAction, map: "fk_reatt_exam")
+}
+
+model FeeDueAndPayment {
+  feeId       Int       @id(map: "PK__FeeDueAn__E09FF203955D65B9") @default(autoincrement())
+  enrolmentId Int
+  semId       Int?
+  feeType     String    @db.VarChar(10)
+  fee         Int
+  fine        Int?
+  fineType    String?   @db.VarChar(1)
+  revisedFee  Int
+  dueDate     DateTime
+  paidAmount  Int?
+  remarks     String?   @db.VarChar(100)
+  mode        String?   @db.VarChar(10)
+  receiptNo   String?   @db.VarChar(30)
+  status      String    @db.VarChar(10)
+  createdBy   String?   @db.VarChar(100)
+  createdOn   DateTime?
+  updatedBy   String?   @db.VarChar(100)
+  updatedOn   DateTime?
+  Enrolment   Enrolment @relation(fields: [enrolmentId], references: [enrolmentId], onUpdate: NoAction, map: "fk_fee_enr")
+  BatchSem    BatchSem? @relation(fields: [semId], references: [semId], onDelete: NoAction, onUpdate: NoAction, map: "fk_fee_sem")
+}
+
+model IntSession {
+  id             Int       @id(map: "PK__IntSessi__3213E83F8D2E9385") @default(autoincrement())
+  subjectId      Int
+  seqNo          Int?
+  scheduledTime  DateTime
+  meetingDetails String?   @db.VarChar(2000)
+  facultyId      Int?
+  createdBy      String?   @db.VarChar(100)
+  createdOn      DateTime?
+  updatedBy      String?   @db.VarChar(100)
+  updatedOn      DateTime?
+  BatchSub       BatchSub  @relation(fields: [subjectId], references: [subjectId], onUpdate: NoAction, map: "fk_b_ses_sub")
+}
+
+model Module {
+  moduleId        Int               @id(map: "PK__Module__8EEC8E1700E69C51") @default(autoincrement())
+  subjectId       Int
+  seqNumber       Int
+  activationDay   Int
+  video1link      String            @db.VarChar(500)
+  video2link      String?           @db.VarChar(500)
+  video3link      String?           @db.VarChar(500)
+  maxMark         Decimal           @db.Decimal(10, 2)
+  passMark        Decimal           @db.Decimal(10, 2)
+  learningPoint   Int?
+  learningHour    Decimal?          @db.Decimal(10, 2)
+  createdBy       String?           @db.VarChar(100)
+  createdOn       DateTime?
+  updatedBy       String?           @db.VarChar(100)
+  updatedOn       DateTime?
+  Subject         Subject           @relation(fields: [subjectId], references: [subjectId], onUpdate: NoAction, map: "fk_module_sub")
+  ModuleExamQuest ModuleExamQuest[]
+}
+
+model ModuleExamAttempt {
+  attemptId   Int         @id(map: "PK__ModuleEx__930480066F9CD2A8") @default(autoincrement())
+  moduleId    Int
+  enrolmentId Int
+  startTime   DateTime?
+  endTime     DateTime?
+  maxMark     Decimal?    @db.Decimal(10, 2)
+  passMark    Decimal?    @db.Decimal(10, 2)
+  isPassed    Boolean?
+  mark        Decimal?    @db.Decimal(10, 2)
+  createdBy   String?     @db.VarChar(100)
+  createdOn   DateTime?
+  updatedBy   String?     @db.VarChar(100)
+  updatedOn   DateTime?
+  Enrolment   Enrolment   @relation(fields: [enrolmentId], references: [enrolmentId], onUpdate: NoAction, map: "fk_att_mod_enr")
+  BatchModule BatchModule @relation(fields: [moduleId], references: [moduleId], onUpdate: NoAction, map: "fk_att_mod_exam")
+}
+
+model ModuleExamQuest {
+  questionId  Int       @id(map: "PK__ModuleEx__6238D4B281E8D45C") @default(autoincrement())
+  moduleId    Int
+  question    String    @db.NVarChar(4000)
+  option1     String    @db.NVarChar(4000)
+  option2     String    @db.NVarChar(4000)
+  option3     String    @db.NVarChar(4000)
+  option4     String    @db.NVarChar(4000)
+  rightAnswer String    @db.VarChar(1)
+  maxMark     Decimal   @db.Decimal(10, 2)
+  passMark    Decimal   @db.Decimal(10, 2)
+  duration    Int
+  createdBy   String?   @db.VarChar(100)
+  createdOn   DateTime?
+  updatedBy   String?   @db.VarChar(100)
+  updatedOn   DateTime?
+  Module      Module    @relation(fields: [moduleId], references: [moduleId], onUpdate: NoAction, map: "fk_q_mod")
+}
+
+model RoleAPIMap {
+  Id      Int    @id(map: "PK__RoleAPIM__3214EC076D4AF02D") @default(autoincrement())
+  role    String @db.VarChar(20)
+  APIName String @db.VarChar(200)
+}
+
+model Score {
+  scoreId     Int       @id(map: "PK__Score__B56A0C8D1126D684") @default(autoincrement())
+  semId       Int
+  enrolmentId Int
+  scoreType   String    @db.VarChar(30)
+  parentId    Int?
+  mark        Decimal?  @db.Decimal(10, 2)
+  maxMark     Decimal?  @db.Decimal(10, 2)
+  passMark    Decimal?  @db.Decimal(10, 2)
+  isPassed    Boolean?
+  Remarks     String?   @db.VarChar(100)
+  createdBy   String?   @db.VarChar(100)
+  createdOn   DateTime?
+  updatedBy   String?   @db.VarChar(100)
+  updatedOn   DateTime?
+  Enrolment   Enrolment @relation(fields: [enrolmentId], references: [enrolmentId], onUpdate: NoAction, map: "fk_score_enr")
+  BatchSem    BatchSem  @relation(fields: [semId], references: [semId], onUpdate: NoAction, map: "fk_score_sem")
+
+  @@unique([enrolmentId, scoreType, parentId], map: "unique_score_type")
+}
+
+model Semester {
+  semId        Int       @id(map: "PK__Semester__DF1884120123648C") @default(autoincrement())
+  courseId     Int
+  seqNumber    Int
+  duration     Int
+  fee          Int
+  feeDueNoDays Int
+  freezeNoDays Int
+  maxMark      Decimal   @db.Decimal(10, 2)
+  passMark     Decimal   @db.Decimal(10, 2)
+  createdBy    String?   @db.VarChar(100)
+  createdOn    DateTime?
+  updatedBy    String?   @db.VarChar(100)
+  updatedOn    DateTime?
+  Course       Course    @relation(fields: [courseId], references: [courseId], onUpdate: NoAction, map: "fk_Semester_course")
+  Subject      Subject[]
+
+  @@unique([courseId, seqNumber], map: "unique_sem")
+}
+
+model Student {
+  studentId    Int         @id(map: "PK__Student__4D11D63C3917AB1F") @default(autoincrement())
+  fullName     String      @db.VarChar(100)
+  dob          DateTime    @db.Date
+  addressLine1 String      @db.VarChar(300)
+  addressLine2 String?     @db.VarChar(300)
+  pinCode      Int?
+  district     String?     @db.VarChar(100)
+  state        String?     @db.VarChar(100)
+  country      String      @db.VarChar(100)
+  emailId      String      @db.VarChar(100)
+  isdCode      String      @db.VarChar(10)
+  mobileNumber BigInt      @unique(map: "UQ__Student__A81EEE8D3115BBC0")
+  loginId      String      @unique(map: "UQ__Student__1F5EF4CE4DB309CB") @db.VarChar(50)
+  password     String      @db.VarChar(100)
+  createdBy    String?     @db.VarChar(100)
+  createdOn    DateTime?
+  updatedBy    String?     @db.VarChar(100)
+  updatedOn    DateTime?
+  Enrolment    Enrolment[]
+}
+
+model Subject {
+  subjectId   Int           @id(map: "PK__Subject__ACF9A760ACB12F57") @default(autoincrement())
+  semId       Int
+  name        String        @db.VarChar(50)
+  code        String        @db.VarChar(10)
+  maxMark     Decimal       @db.Decimal(10, 2)
+  passMark    Decimal       @db.Decimal(10, 2)
+  createdBy   String?       @db.VarChar(100)
+  createdOn   DateTime?
+  updatedBy   String?       @db.VarChar(100)
+  updatedOn   DateTime?
+  Module      Module[]
+  Semester    Semester      @relation(fields: [semId], references: [semId], onUpdate: NoAction, map: "fk_sub_sem")
+  SubjectExam SubjectExam[]
+  TextBook    TextBook[]
+
+  @@unique([semId, code], map: "unique_sem_sub")
+}
+
+model SubjectExam {
+  subExamId        Int                @id(map: "PK__SubjectE__8FF6733F4B38829E") @default(autoincrement())
+  subjectId        Int
+  type             String             @db.VarChar(50)
+  maxMark          Decimal            @db.Decimal(10, 2)
+  passMark         Decimal            @db.Decimal(10, 2)
+  duration         Int
+  activationDay    Int
+  createdBy        String?            @db.VarChar(100)
+  createdOn        DateTime?
+  updatedBy        String?            @db.VarChar(100)
+  updatedOn        DateTime?
+  Subject          Subject            @relation(fields: [subjectId], references: [subjectId], onUpdate: NoAction, map: "fk_q_sub")
+  SubjectExamQuest SubjectExamQuest[]
+
+  @@unique([subjectId, type], map: "unique_sub_exmtype")
+}
+
+model SubjectExamQuest {
+  questionId  Int         @id(map: "PK__SubjectE__6238D4B2698585D3") @default(autoincrement())
+  subExamId   Int
+  question    String      @db.NVarChar(4000)
+  option1     String      @db.NVarChar(4000)
+  option2     String      @db.NVarChar(4000)
+  option3     String      @db.NVarChar(4000)
+  option4     String      @db.NVarChar(4000)
+  rightAnswer String      @db.VarChar(1)
+  maxMark     Decimal     @db.Decimal(10, 2)
+  passMark    Decimal     @db.Decimal(10, 2)
+  duration    Int
+  createdBy   String?     @db.VarChar(100)
+  createdOn   DateTime?
+  updatedBy   String?     @db.VarChar(100)
+  updatedOn   DateTime?
+  SubjectExam SubjectExam @relation(fields: [subExamId], references: [subExamId], onUpdate: NoAction, map: "fk_q_sub_q")
+}
+
+model TextBook {
+  id        Int       @id(map: "PK__TextBook__3213E83FBBEC52E5") @default(autoincrement())
+  subjectId Int
+  name      String    @db.NVarChar(500)
+  link      String    @db.VarChar(500)
+  docType   String    @db.VarChar(10)
+  createdBy String?   @db.VarChar(100)
+  createdOn DateTime?
+  updatedBy String?   @db.VarChar(100)
+  updatedOn DateTime?
+  Subject   Subject   @relation(fields: [subjectId], references: [subjectId], onUpdate: NoAction, map: "fk_book_sub")
 }
