@@ -442,9 +442,9 @@ model ModuleExamQuest {
 }
 
 model RoleAPIMap {
-  Id      Int    @id(map: "PK__RoleAPIM__3214EC076D4AF02D") @default(autoincrement())
-  role    String @db.VarChar(20)
+  Id      Int    @id(map: "PK__RoleAPIM__3214EC0762E30E05") @default(autoincrement())
   APIName String @db.VarChar(200)
+  role    String @db.VarChar(50)
 }
 
 model Score {
@@ -577,4 +577,14 @@ model TextBook {
   updatedBy String?   @db.VarChar(100)
   updatedOn DateTime?
   Subject   Subject   @relation(fields: [subjectId], references: [subjectId], onUpdate: NoAction, map: "fk_book_sub")
+}
+
+model sysdiagrams {
+  name         String @db.NVarChar(128)
+  principal_id Int
+  diagram_id   Int    @id(map: "PK__sysdiagr__C2B05B61DA0BC091") @default(autoincrement())
+  version      Int?
+  definition   Bytes?
+
+  @@unique([principal_id, name], map: "UK_principal_name")
 }

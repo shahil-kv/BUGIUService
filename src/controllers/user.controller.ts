@@ -31,6 +31,8 @@ const signUpStudent = async (req: Request, res: any) => {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+    ('$2a$10$.yMjB4t03DvPoDT8oUtO5.qFfZImadaevjDZKUNXwcEl4gL.GO1Le');
+    ('$2a$10$GR55LEA0RSzn1l7nUaQgiugaqBJW1qcEmzW7b8M8ms5ScrVqZD22G');
 
     // Generate verification tokens
     // const { unHashedToken, hashedToken, tokenExpiry } = generateTemporaryToken();
@@ -119,31 +121,111 @@ const signUpStudent = async (req: Request, res: any) => {
     throw new ApiError(500, 'Something went wrong while registering the user');
   }
 };
+const authenticateStudent = asyncHandler(async (req: any, res: any) => {
+  const { password, loginId } = req.body;
 
-const modifyStudent = asyncHandler(async (req: Request, res: Response) => {
-  const { studentId, fullName, dob, addressLine1, addressLine2 = null, pinCode = null, district = null, state = null, country, email, isdCode, mobileNumber, loginId, password } = req.body;
+  // Hash the password
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-  const result = await prisma.$queryRaw<any[]>`
-      DECLARE @ResponseCode VARCHAR(10)
-      DECLARE @NewStudentId int
-
-     EXEC [dbo].[modifyStudent]
-         @studentId = ${studentId},
-        @fullName = ${fullName},
-        @dob = ${new Date(dob)},
-        @addressLine1 = ${addressLine1},
-        @addressLine2 = ${addressLine2},
-        @pinCode = ${pinCode},
-        @district = ${district},
-        @state = ${state},
-        @country = ${country},
-        @isdCode = ${isdCode},
-        @mobileNumber = ${mobileNumber},
-        @updatedBy = ${'shah'},
-        @ResponseCode OUTPUT
-
-      SELECT @ResponseCode as ResponseCode, @NewStudentId as NewStudentId
+  try {
+    // Call the stored procedure
+    const result = await prisma.$queryRaw<any[]>`
+     DECLARE @ResponseCode VARCHAR(10)
+      EXEC [dbo].[authenticateStudent]
+      @loginId = ${loginId},
+      @enryptedPassword = ${hashedPassword},
+      @ResponseCode = @ResponseCode OUTPUT
+      SELECT @ResponseCode as ResponseCode
     `;
+
+    const responseCode = result[0].ResponseCode;
+
+    if (responseCode !== '200') {
+      throw new ApiError(400, `Authentication failed with code: ${responseCode}`, []);
+    }
+
+    // Get user details
+    const user = await prisma.student.findUnique({
+      where: { loginId: loginId },
+      select: {
+        studentId: true,
+        emailId: true,
+        password: true,
+        fullName: true,
+        loginId: true,
+        addressLine1: true,
+        addressLine2: true,
+        pinCode: true,
+        district: true,
+        state: true,
+        country: true,
+        isdCode: true,
+        createdBy: true,
+      },
+    });
+
+    // Compare input password with the stored hashed password
+    const isMatch = await bcrypt.compare(password, user?.password as string);
+    if (!isMatch) {
+      throw new ApiError(400, 'Invalid password');
+    }
+
+    if (!user) {
+      throw new ApiError(500, 'Error retrieving user details after authentication');
+    }
+
+    // Generate JWT
+    const token = jwt.sign(
+      {
+        identifier: user.studentId,
+        role: 'Student',
+      },
+      process.env.JWT_SECRET as string, // Ensure JWT_SECRET is in your environment variables
+      { expiresIn: '3h' } // Set token expiry to 3 hours
+    );
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          user,
+          responseCode,
+          token,
+        },
+        'User authenticated successfully'
+      )
+    );
+  } catch (error) {
+    throw new ApiError(500, 'Authentication failed', [error]);
+  }
+});
+
+const getDetailsByLoginId = asyncHandler(async (req: any, res: any) => {
+  const { loginId, role } = req.body;
+  try {
+    const result = await prisma.$queryRaw<any[]>`
+     DECLARE @ResponseCode VARCHAR(10)
+      EXEC [dbo].[getDetailsByLoginId]
+      @loginId = ${loginId},
+      @role = ${role}
+    `;
+
+    if (!result) {
+      throw new ApiError(404, 'User not found');
+    }
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          result,
+        },
+        'User details retrieved successfully'
+      )
+    );
+  } catch (error) {
+    throw new ApiError(500, 'Failed to retrieve user details', [error]);
+  }
 });
 
 // const loginUser = asyncHandler(async (req: any, res: any) => {});
@@ -173,4 +255,4 @@ const modifyStudent = asyncHandler(async (req: Request, res: Response) => {
 
 // const handleSocialLogin = asyncHandler(async (req: any, res: any) => {});
 
-export { signUpStudent, modifyStudent };
+export { signUpStudent, authenticateStudent, getDetailsByLoginId };

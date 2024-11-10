@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import passport from 'passport';
 import { UserRolesEnum } from '../../constant';
-import { modifyStudent, signUpStudent } from '../../controllers/user.controller';
+import { authenticateStudent, signUpStudent, getDetailsByLoginId } from '../../controllers/user.controller';
 import { verifyJWT, verifyPermission } from '../../middleware/auth.middleware';
 import {
   userAssignRoleValidator,
@@ -12,12 +12,14 @@ import {
   userResetForgottenPasswordValidator,
 } from '../../validators/auth/user.validate';
 import { validate } from '../../validators/validate';
+import { get } from 'http';
 
 const router = Router();
 
 // Unsecured route
-router.route('/sign-up-student').post(userRegisterValidator(), validate, signUpStudent);
-router.route('/modify-student').put(modifyStudent);
+router.route('/signUpStudent').post(userRegisterValidator(), validate, signUpStudent);
+router.route('/authenticateStudent').post(authenticateStudent);
+router.route('/GetDetailsByLoginId').post(getDetailsByLoginId);
 // router.route('/login').post(userLoginValidator(), validate, loginUser);
 // router.route('/refresh-token').post(refreshAccessToken);
 // router.route('/verify-email/:verificationToken').get(verifyEmail);
